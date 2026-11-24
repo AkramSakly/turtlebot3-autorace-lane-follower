@@ -5,7 +5,9 @@ Copyright (c) 2026 Akram Sakly
 This license covers the documentation, configuration files and media in this
 repository. The TurtleBot3 AutoRace packages used by this project are developed
 by ROBOTIS (https://github.com/ROBOTIS-GIT/turtlebot3_autorace) and are licensed
-under the Apache License 2.0; they are not redistributed here.
+under the Apache License 2.0; they are not redistributed here, except
+modified_robotis/control_lane.py, which remains under the Apache License 2.0
+(see the change note at the top of that file).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

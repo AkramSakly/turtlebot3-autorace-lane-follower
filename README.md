@@ -157,6 +157,26 @@ Values tuned on our arena with `rqt` (saved with `ros2 param dump`), in [`config
 
 These four values set the trapezoid of road that `image_projection` warps into the top-down view.
 
+### Lane controller — [`modified_robotis/control_lane.py`](modified_robotis/control_lane.py)
+
+We used the ROBOTIS PD lane controller with **one change: Kd = 0.002 instead of 0.007**.
+
+```
+error     = lane_centre - 500                        (pixels in the projected image)
+angular_z = -(Kp * error + Kd * (error - last_error)),  clipped to ±2.0 rad/s
+linear_x  = min(MAX_VEL * max(1 - |error| / 500, 0) ** 2.2, 0.05)   (MAX_VEL = 0.1)
+```
+
+| Gain | ROBOTIS humble | Ours |
+| --- | --- | --- |
+| Kp | 0.0025 | 0.0025 |
+| Kd | 0.007 | **0.002** |
+| Speed cap | 0.05 m/s | 0.05 m/s |
+
+The robot slows down automatically when the error is large (the `** 2.2` term) and never exceeds 0.05 m/s.
+To use it, replace `turtlebot3_autorace_mission/turtlebot3_autorace_mission/control_lane.py` in your
+`turtlebot3_autorace` clone with this file and rebuild.
+
 ### How to use them
 
 The files are parameter dumps taken in calibration mode (`is_*_calibration_mode: true`). To use the values
