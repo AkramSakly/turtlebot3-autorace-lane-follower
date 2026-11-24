@@ -1,24 +1,47 @@
-# TurtleBot3 AutoRace Lane Follower — Part 1 (classical computer vision, ROS 2 Humble)
+<div align="center">
 
-A real TurtleBot3 Burger follows the lane between a **yellow line** and a **white line** on our arena,
-using the official **ROBOTIS TurtleBot3 AutoRace** packages: camera calibration, bird's-eye
-projection, HSV colour thresholds for lane detection, and lane control.
+# TurtleBot3 AutoRace Lane Follower — Classical Vision
 
-> **Part 2** replaces the hand-tuned colour thresholds with deep learning (U-Net segmentation):
-> **[AkramSakly/turtlebot3-lane-follower](https://github.com/AkramSakly/turtlebot3-lane-follower)**
+**Autonomous lane following on a real TurtleBot3 with the ROBOTIS AutoRace stack on ROS 2 Humble**
 
-<p align="center">
-  <img src="media/robot_arena.gif" alt="TurtleBot3 driving the AutoRace arena" width="640"><br>
-  <em>The robot driving the arena with the AutoRace lane follower</em>
-</p>
+[![ROS 2 Humble](https://img.shields.io/badge/ROS%202-Humble-22314E?logo=ros)](https://docs.ros.org/en/humble/)
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-HSV%20detection-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
+[![TurtleBot3](https://img.shields.io/badge/Robot-TurtleBot3%20Burger-orange)](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/)
+[![ROBOTIS AutoRace](https://img.shields.io/badge/Based%20on-ROBOTIS%20AutoRace-blue)](https://github.com/ROBOTIS-GIT/turtlebot3_autorace)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-<p align="center">
-  <img src="media/lane_detection_birdseye.gif" alt="AutoRace lane detection, bird's-eye view" width="420"><br>
-  <em>Lane detection (<code>/detect/image_lane/compressed</code>): bird's-eye view, yellow and white lines detected, lane filled in green (6x speed)</em>
-</p>
+<img src="media/robot_arena.gif" alt="TurtleBot3 driving the AutoRace arena" width="640">
 
-Full-length recordings: [robot on the arena (MP4)](media/robot_arena.mp4) ·
-[terminals + lane detection, 2 min (MP4)](media/autorace_run_screen.mp4)
+<sub>The robot driving our arena with the AutoRace lane follower · <a href="media/robot_arena.mp4">MP4</a></sub>
+
+<img src="media/lane_detection_birdseye.gif" alt="AutoRace lane detection, bird's-eye view" width="420">
+
+<sub>Lane detection seen by the robot (<code>/detect/image_lane/compressed</code>, 6x speed): bird's-eye view, yellow and white lines detected, lane in green · <a href="media/autorace_run_screen.mp4">full 2-minute recording</a></sub>
+
+**Part 1 of 2** · Part 2 (deep learning, U-Net segmentation): **[turtlebot3-lane-follower](https://github.com/AkramSakly/turtlebot3-lane-follower)**
+
+</div>
+
+---
+
+## Highlights
+
+- **Full AutoRace pipeline on a real robot**: camera calibration, bird's-eye projection, HSV lane detection, PD lane control.
+- **Our own calibration and tuning**: fisheye intrinsic calibration, projection trapezoid, HSV thresholds for our arena ([`config/`](config/)).
+- **Tuned controller**: ROBOTIS PD controller with a lower derivative gain (Kd 0.007 → 0.002), speed capped at 0.05 m/s.
+- **Fix for the Pi camera on Humble**: empty compressed images with BGR888 solved with an on-robot JPEG republisher.
+
+## Contents
+
+- [How it works](#how-it-works)
+- [Repository structure](#repository-structure)
+- [Getting started](#getting-started)
+- [Run](#run-in-this-order)
+- [Camera calibration](#camera-calibration-if-no-yaml-file-yet)
+- [Our calibrated parameters](#our-calibrated-parameters)
+- [Troubleshooting](#troubleshooting)
+- [Part 1 vs Part 2](#part-1-vs-part-2)
 
 ## How it works
 
@@ -36,7 +59,25 @@ Pi camera ─► compressed republisher (robot) ─► intrinsic calibration (un
 | Lane detection | `turtlebot3_autorace_detect` | HSV thresholds ([ours](config/lane_hsv_calibration.yaml)) find the yellow and white lines, fit them, compute the lane centre |
 | Lane control | `turtlebot3_autorace_mission` | Steers toward the lane centre, publishes `/cmd_vel` |
 
-## Requirements
+## Repository structure
+
+```
+turtlebot3-autorace-lane-follower/
+├── config/
+│   ├── camera_intrinsic_ost_800x600.yaml        # fisheye intrinsic calibration (800x600)
+│   ├── camera_intrinsic_320x240_scaled.yaml     # same, scaled to the 320x240 stream
+│   ├── extrinsic_projection_calibration.yaml    # bird's-eye projection trapezoid
+│   └── lane_hsv_calibration.yaml                # HSV thresholds, yellow and white lines
+├── modified_robotis/
+│   └── control_lane.py                          # ROBOTIS PD controller, Kd changed to 0.002
+├── media/                                       # demo GIFs and videos
+├── LICENSE
+└── README.md
+```
+
+## Getting started
+
+### Requirements
 
 - TurtleBot3 Burger with Raspberry Pi camera, ROS 2 Humble on the robot and on the remote PC
 - ROBOTIS AutoRace packages on the PC:
@@ -47,7 +88,7 @@ git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3_autorace.git
 cd ~/turtlebot3_ws && colcon build --symlink-install && source install/setup.bash
 ```
 
-One-time installs:
+### One-time installs
 
 ```bash
 # On the TurtleBot
@@ -239,8 +280,15 @@ adjust while watching `/detect/image_yellow_lane_marker/compressed` and
 | Lighting changes | Thresholds must be retuned | Trained on lights on / off |
 | Code | ROBOTIS AutoRace packages | Own ROS 2 package `tb3_lane_center` |
 
-## Credits and license
+## Acknowledgements
 
 Lane detection and control use the [ROBOTIS TurtleBot3 AutoRace](https://github.com/ROBOTIS-GIT/turtlebot3_autorace)
 packages (Apache 2.0), see the [ROBOTIS e-Manual](https://emanual.robotis.com/docs/en/platform/turtlebot3/autonomous_driving/).
-Documentation and media in this repository: MIT.
+
+## Author
+
+[@AkramSakly](https://github.com/AkramSakly)
+
+## License
+
+Documentation, configuration and media: [MIT](LICENSE). `modified_robotis/control_lane.py`: Apache 2.0 (ROBOTIS).
