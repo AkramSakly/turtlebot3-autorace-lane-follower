@@ -1,0 +1,11 @@
+/image_projection:
+  ros__parameters:
+    camera:
+      extrinsic_camera_calibration:
+        bottom_x: 180
+        bottom_y: 159
+        top_x: 55
+        top_y: 25
+    is_extrinsic_camera_calibration_mode: true
+    use_sim_time: false
+

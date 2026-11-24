@@ -33,7 +33,7 @@ Pi camera ─► compressed republisher (robot) ─► intrinsic calibration (un
 | Camera | `camera_ros` + `image_transport republish` (robot) | 320x240 images, sent to the PC as JPEG |
 | Intrinsic calibration | `turtlebot3_autorace_camera` | Removes lens distortion |
 | Extrinsic calibration | `turtlebot3_autorace_camera` | Projects the road to a top-down (bird's-eye) view |
-| Lane detection | `turtlebot3_autorace_detect` | HSV thresholds find the yellow and white lines, fits them, computes the lane centre |
+| Lane detection | `turtlebot3_autorace_detect` | HSV thresholds ([ours](config/lane_hsv_calibration.yaml)) find the yellow and white lines, fit them, compute the lane centre |
 | Lane control | `turtlebot3_autorace_mission` | Steers toward the lane centre, publishes `/cmd_vel` |
 
 ## Requirements
@@ -131,11 +131,48 @@ Use your board's inner-corner count and square size (metres). Move the board unt
 click **CALIBRATE**, then **COMMIT**. The file appears in `~/.ros/camera_info/` on the robot; restart step 2
 with `camera_info_url` and continue from step 4.
 
-## Lane colour tuning
+## Our calibrated parameters
 
-The HSV thresholds for the yellow and white lines live in
-`turtlebot3_autorace_detect/param/lane/lane.yaml`. Tune them while watching the yellow and white
-marker images until each line is detected cleanly in the bird's-eye view.
+Values tuned on our arena with `rqt` (saved with `ros2 param dump`), in [`config/`](config/).
+
+### Lane colour thresholds — [`config/lane_hsv_calibration.yaml`](config/lane_hsv_calibration.yaml)
+
+| Line | Hue (low–high) | Saturation (low–high) | Lightness (low–high) |
+| --- | --- | --- | --- |
+| White | 0 – 179 | 0 – 70 | 180 – 255 |
+| Yellow | 10 – 127 | 70 – 255 | 95 – 255 |
+
+- **White** = any hue, low saturation, high lightness: bright, colourless pixels.
+- **Yellow** = coloured (saturation ≥ 70) and fairly bright (lightness ≥ 95). The hue range is wide, so the
+  saturation and lightness limits do most of the work of separating yellow from the dark floor.
+
+### Bird's-eye projection (extrinsic calibration) — [`config/extrinsic_projection_calibration.yaml`](config/extrinsic_projection_calibration.yaml)
+
+| Parameter | Value (pixels) |
+| --- | --- |
+| `top_x` | 55 |
+| `top_y` | 25 |
+| `bottom_x` | 180 |
+| `bottom_y` | 159 |
+
+These four values set the trapezoid of road that `image_projection` warps into the top-down view.
+
+### How to use them
+
+The files are parameter dumps taken in calibration mode (`is_*_calibration_mode: true`). To use the values
+for driving, copy the numbers into the ROBOTIS package files and rebuild:
+
+- HSV values → `turtlebot3_autorace_detect/param/lane/lane.yaml`
+- Projection values → `turtlebot3_autorace_camera/calibration/extrinsic_calibration/projection.yaml`
+
+```bash
+cd ~/turtlebot3_ws && colcon build --symlink-install && source install/setup.bash
+```
+
+To retune: launch steps 7 and 8 with calibration mode on, open `rqt` → Dynamic Reconfigure / Parameters,
+adjust while watching `/detect/image_yellow_lane_marker/compressed` and
+`/detect/image_white_lane_marker/compressed`, then save with
+`ros2 param dump /detect_lane > lane_hsv_calibration.yaml`.
 
 ## Troubleshooting
 
