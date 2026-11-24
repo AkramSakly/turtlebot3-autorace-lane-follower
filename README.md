@@ -135,6 +135,33 @@ with `camera_info_url` and continue from step 4.
 
 Values tuned on our arena with `rqt` (saved with `ros2 param dump`), in [`config/`](config/).
 
+### Camera intrinsic calibration — [`config/camera_intrinsic_ost_800x600.yaml`](config/camera_intrinsic_ost_800x600.yaml)
+
+Calibrated with `camera_calibration` at 800x600 using the **equidistant (fisheye)** lens model.
+
+```
+K = [ 284.00717   -0.50803   400.26605 ]      D (equidistant k1..k4) =
+    [   0         289.34836  295.60867 ]      [ -0.308274, 1.748583, -1.910241, 0.010732 ]
+    [   0           0          1       ]
+```
+
+| Property | Value |
+| --- | --- |
+| Focal length fx / fy | 284.0 / 289.3 px |
+| Principal point cx / cy | 400.3 / 295.6 px (image centre 400 / 300) |
+| Skew | -0.508 px (negligible) |
+| Lens model | equidistant (fisheye), 4 coefficients |
+
+The camera streams at 320x240, and the file loaded with `camera_info_url` must match the stream size.
+[`config/camera_intrinsic_320x240_scaled.yaml`](config/camera_intrinsic_320x240_scaled.yaml) is the same
+calibration with K and P scaled by 0.4 (fx 113.60287, fy 115.73934, cx 160.10642, cy 118.24347); the distortion
+coefficients do not change with image size.
+
+Note: with these coefficients the fisheye distortion curve stops increasing about 48° from the optical axis,
+so the outer edges of the image are not well described by the model. This usually means the checkerboard
+did not reach the image corners during calibration; recalibrating with the board moved into the corners
+would improve the edges. Lane detection only uses the lower centre of the image, so it is not affected much.
+
 ### Lane colour thresholds — [`config/lane_hsv_calibration.yaml`](config/lane_hsv_calibration.yaml)
 
 | Line | Hue (low–high) | Saturation (low–high) | Lightness (low–high) |
